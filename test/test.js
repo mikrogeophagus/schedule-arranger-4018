@@ -5,14 +5,15 @@ const passportStub = require('passport-stub');
 
 describe('/login', () => {
   beforeAll(() => {
-    passportStub.install(app);
-    passportStub.login({ username: 'testuser' });
-  });
+       passportStub.install(app);
+       passportStub.login({ username: 'testuser' });
+   });
 
   afterAll(() => {
     passportStub.logout();
     passportStub.uninstall(app);
   });
+
   test('ログインのためのリンクが含まれる', () => {
     return request(app)
       .get('/login')
