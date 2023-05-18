@@ -7,7 +7,7 @@ const helmet = require('helmet');
 const session = require('express-session');
 const passport = require('passport');
 const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({ log: [ 'query' ] });
 
 const GitHubStrategy = require('passport-github2').Strategy;
 const GITHUB_CLIENT_ID = '2f831cb3d4aac02393aa';
