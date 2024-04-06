@@ -9,8 +9,12 @@ const { env } = require("hono/adapter");
 const { serveStatic } = require("@hono/node-server/serve-static");
 const { githubAuth } = require("@hono/oauth-providers/github");
 const { getIronSession } = require("iron-session");
+const { PrismaClient } = require('@prisma/client');
 const layout = require("./layout");
 
+const prisma = new PrismaClient({ log: [ 'query' ] });
+
+const indexRouter = require("./routes/index");
 const loginRouter = require("./routes/login");
 const logoutRouter = require("./routes/logout");
 
@@ -47,10 +51,24 @@ app.get("/auth/github", async (c) => {
   const session = c.get("session");
   session.user = c.get("user-github");
   await session.save();
+
+  // ユーザ情報をデータベースに保存
+  const userId = session.user.id;
+  const data = {
+    userId,
+    username: session.user.login,
+  }
+  await prisma.user.upsert({
+    where: { userId },
+    update: data,
+    create: data,
+  });
+
   return c.redirect("/");
 });
 
 // ルーティング
+app.route("/", indexRouter);
 app.route("/login", loginRouter);
 app.route("/logout", logoutRouter);
 
