@@ -97,6 +97,38 @@ app.get("/:scheduleId", async (c) => {
       username: user.login,
     },
   ];
+
+  return c.html(
+    layout(
+      `予定: ${schedule.scheduleName}`,
+      html`
+        <h4>${schedule.scheduleName}</h4>
+        <p style="white-space: pre;">${schedule.memo}</p>
+        <p>作成者: ${schedule.user.username}</p>
+        <h3>出欠表</h3>
+        <table>
+          <tr>
+            <th>予定</th>
+            ${users.map((user) => html`<th>${user.username}</th>`)}
+          </tr>
+          ${candidates.map(
+            (candidate) => html`
+              <tr>
+                <th>${candidate.candidateName}</th>
+                ${users.map(
+                  (user) => html`
+                    <td>
+                      <button>欠席</button>
+                    </td>
+                  `,
+                )}
+              </tr>
+            `,
+          )}
+        </table>
+      `,
+    ),
+  );
 });
 
 module.exports = app;
