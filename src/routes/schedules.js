@@ -67,4 +67,36 @@ app.post("/", async (c) => {
   return c.redirect("/schedules/" + scheduleId);
 });
 
+app.use("/:scheduleId", ensureAuthenticated());
+app.get("/:scheduleId", async (c) => {
+  const { user } = c.get("session");
+  const schedule = await prisma.schedule.findUnique({
+    where: { scheduleId: c.req.param("scheduleId") },
+    include: {
+      user: {
+        select: {
+          userId: true,
+          username: true,
+        },
+      },
+    },
+  });
+
+  if (!schedule) {
+    return c.notFound();
+  }
+
+  const candidates = await prisma.candidate.findMany({
+    where: { scheduleId: schedule.scheduleId },
+    orderBy: { candidateId: "asc" },
+  });
+
+  const users = [
+    {
+      userId: user.id,
+      username: user.login,
+    },
+  ];
+});
+
 module.exports = app;
