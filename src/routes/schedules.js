@@ -2,6 +2,9 @@ const { Hono } = require("hono");
 const { html } = require("hono/html");
 const layout = require("../layout");
 const ensureAuthenticated = require("../middlewares/ensure-authenticated");
+const { v4: uuidv4 } = require("uuid");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient({ log: ["query"] });
 
 const app = new Hono();
 
@@ -33,8 +36,35 @@ app.get("/new", (c) => {
 
 app.use("/", ensureAuthenticated());
 app.post("/", async (c) => {
-  console.log(await c.req.parseBody()); // TODO 予定と候補を保存する実装をする
-  return c.redirect("/");
+  const { user } = c.get("session");
+  const body = await c.req.parseBody();
+
+  // 予定を登録
+  const { scheduleId } = await prisma.schedule.create({
+    data: {
+      scheduleId: uuidv4(),
+      scheduleName: body.scheduleName.slice(0, 255) || "（名称未設定）",
+      memo: body.memo,
+      createdBy: user.id,
+      updatedAt: new Date(),
+    },
+  });
+
+  // 候補日程を登録
+  const candidateNames = body.candidates
+    .split("\n")
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
+  const candidates = candidateNames.map((candidateName) => ({
+    candidateName,
+    scheduleId,
+  }));
+  await prisma.candidate.createMany({
+    data: candidates,
+  });
+
+  // 作成した予定のページにリダイレクト
+  return c.redirect("/schedules/" + scheduleId);
 });
 
 module.exports = app;
